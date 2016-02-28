@@ -5,9 +5,12 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.net.Uri;
 import android.net.wifi.WifiConfiguration;
 import android.net.wifi.WifiManager;
 import android.os.Bundle;
+import android.os.Environment;
+import android.support.annotation.NonNull;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
 import android.support.v4.app.ActivityCompat;
@@ -22,11 +25,13 @@ import android.view.MenuItem;
 import com.google.zxing.integration.android.IntentIntegrator;
 import com.google.zxing.integration.android.IntentResult;
 
+import java.io.File;
 import java.util.List;
 
 public class HFCEStuff extends AppCompatActivity {
 
     final int MY_PERMISSIONS_REQUEST_CAMERA = 1;
+    private static final String TAG = "HPCE Stuff";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -87,27 +92,17 @@ public class HFCEStuff extends AppCompatActivity {
     }
 
     @Override
-    public void onRequestPermissionsResult(int requestCode, String permissions[], int[] grantResults) {
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         switch (requestCode) {
             case MY_PERMISSIONS_REQUEST_CAMERA: {
                 // If request is cancelled, the result arrays are empty.
-                if (grantResults.length > 0
-                        && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                if ((grantResults.length > 0)
+                        && (grantResults[0] == PackageManager.PERMISSION_GRANTED)) {
 
                     initiate();
-                } else {
-
-                    // permission denied, boo! Disable the
-                    // functionality that depends on this permission.
                 }
-                return;
             }
-
-            // other 'case' lines to check for other
-            // permissions this app might request
         }
-
-
     }
 
     public void initiate() {
@@ -126,22 +121,8 @@ public class HFCEStuff extends AppCompatActivity {
                 if (resultCode == Activity.RESULT_OK) {
                     // Parsing bar code reader result
                     IntentResult result = IntentIntegrator.parseActivityResult(requestCode, resultCode, intent);
-                    String[] contents = result.getContents().split(","); // Split contents by comma
-                    WifiConfiguration conf = new WifiConfiguration();
-                    conf.SSID = "\"" + contents[0] + "\"";
-                    conf.preSharedKey = "\"" + contents[1] + "\"";
-                    /* For WEP networks
-                    conf.wepKeys[0] =  "\"" + contents[1] + "\"";
-                    conf.wepTxKeyIndex = 0;
-                    conf.allowedKeyManagement.set(WifiConfiguration.KeyMgmt.NONE);
-                    conf.allowedGroupCiphers.set(WifiConfiguration.GroupCipher.WEP40);
-                    */
-                    WifiManager wifiManager = (WifiManager)getSystemService(WIFI_SERVICE);
-                    wifiManager.addNetwork(conf);
-                    int netId = wifiManager.addNetwork(conf);
-                    wifiManager.disconnect();
-                    wifiManager.enableNetwork(netId, true);
-                    wifiManager.reconnect();
+                    String contents = result.getContents();
+                    sendFile("image.png");
                 }
                 break;
         }
@@ -160,5 +141,22 @@ public class HFCEStuff extends AppCompatActivity {
         }
 
         return super.onOptionsItemSelected(item);
+    }
+
+    // From http://stackoverflow.com/questions/15697601/
+    public void sendFile(String fileName) {
+
+        Log.d(TAG, "Sending file...");
+
+        File dir = Environment.getExternalStorageDirectory();
+        File manualFile = new File(dir, "/" + fileName);
+        Uri uri = Uri.fromFile(manualFile);
+        String type = "application/pdf";
+
+        Intent sharingIntent = new Intent(android.content.Intent.ACTION_SEND);
+        sharingIntent.setType(type);
+        sharingIntent.setClassName("com.android.bluetooth", "com.android.bluetooth.opp.BluetoothOppLauncherActivity");
+        sharingIntent.putExtra(Intent.EXTRA_STREAM, uri);
+        startActivity(sharingIntent);
     }
 }
