@@ -2,15 +2,18 @@ package com.nwhacks.superteam.hfcetest;
 
 import android.Manifest;
 import android.app.Activity;
+import android.bluetooth.BluetoothAdapter;
+import android.bluetooth.BluetoothDevice;
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.net.wifi.WifiConfiguration;
 import android.net.wifi.WifiManager;
 import android.os.Bundle;
 import android.os.Environment;
-import android.support.annotation.NonNull;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
 import android.support.v4.app.ActivityCompat;
@@ -31,7 +34,7 @@ import java.util.List;
 public class HFCEStuff extends AppCompatActivity {
 
     final int MY_PERMISSIONS_REQUEST_CAMERA = 1;
-    private static final String TAG = "HPCE Stuff";
+    private static final String TAG = "N";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -48,6 +51,36 @@ public class HFCEStuff extends AppCompatActivity {
                         .setAction("Action", null).show();
             }
         });
+
+                // Create a BroadcastReceiver for ACTION_FOUND
+        BroadcastReceiver mReceiver = new BroadcastReceiver() {
+            public void onReceive(Context context, Intent intent) {
+                String action = intent.getAction();
+                // When discovery finds a device
+                if (BluetoothDevice.ACTION_FOUND.equals(action)) {
+                    // Get the BluetoothDevice object from the Intent
+                    BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
+                    // Add the name and address to an array adapter to show in a ListView
+                    //mArrayAdapter.add(device.getName() + "\n" + device.getAddress());
+                    try {
+                        String s = device.getName();
+                        Log.d("BLUE TEETH", device.getName() + " " + device.getAddress());
+                        if(device.getAddress().equals("30:14:11:14:02:68")){
+                            ConnectThread connectThread = new ConnectThread(device);
+                            connectThread.start();
+                        }
+                    }catch (Exception e){
+                        e.printStackTrace();
+                    }
+                }
+            }
+        };
+        // Register the BroadcastReceiver
+        IntentFilter filter = new IntentFilter(BluetoothDevice.ACTION_FOUND);
+        registerReceiver(mReceiver, filter); // Don't forget to unregister during onDestroy
+
+        BluetoothAdapter mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
+        mBluetoothAdapter.startDiscovery();
 
     }
 
@@ -92,17 +125,27 @@ public class HFCEStuff extends AppCompatActivity {
     }
 
     @Override
-    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+    public void onRequestPermissionsResult(int requestCode, String permissions[], int[] grantResults) {
         switch (requestCode) {
             case MY_PERMISSIONS_REQUEST_CAMERA: {
                 // If request is cancelled, the result arrays are empty.
-                if ((grantResults.length > 0)
-                        && (grantResults[0] == PackageManager.PERMISSION_GRANTED)) {
+                if (grantResults.length > 0
+                        && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
 
                     initiate();
+                } else {
+
+                    // permission denied, boo! Disable the
+                    // functionality that depends on this permission.
                 }
+                return;
             }
+
+            // other 'case' lines to check for other
+            // permissions this app might request
         }
+
+
     }
 
     public void initiate() {
