@@ -2,8 +2,11 @@ package com.nwhacks.superteam.hfcetest;
 
 import android.Manifest;
 import android.app.Activity;
+import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.net.wifi.WifiConfiguration;
+import android.net.wifi.WifiManager;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
@@ -18,6 +21,8 @@ import android.view.MenuItem;
 
 import com.google.zxing.integration.android.IntentIntegrator;
 import com.google.zxing.integration.android.IntentResult;
+
+import java.util.List;
 
 public class HFCEStuff extends AppCompatActivity {
 
@@ -117,10 +122,26 @@ public class HFCEStuff extends AppCompatActivity {
     public void onActivityResult(int requestCode, int resultCode, Intent intent) {
         switch (requestCode) {
             case IntentIntegrator.REQUEST_CODE:
+                // From http://stackoverflow.com/questions/8818290/
                 if (resultCode == Activity.RESULT_OK) {
                     // Parsing bar code reader result
                     IntentResult result = IntentIntegrator.parseActivityResult(requestCode, resultCode, intent);
-                    Log.d("Yeah", result.getContents());
+                    String[] contents = result.getContents().split(","); // Split contents by comma
+                    WifiConfiguration conf = new WifiConfiguration();
+                    conf.SSID = "\"" + contents[0] + "\"";
+                    conf.preSharedKey = "\"" + contents[1] + "\"";
+                    /* For WEP networks
+                    conf.wepKeys[0] =  "\"" + contents[1] + "\"";
+                    conf.wepTxKeyIndex = 0;
+                    conf.allowedKeyManagement.set(WifiConfiguration.KeyMgmt.NONE);
+                    conf.allowedGroupCiphers.set(WifiConfiguration.GroupCipher.WEP40);
+                    */
+                    WifiManager wifiManager = (WifiManager)getSystemService(WIFI_SERVICE);
+                    wifiManager.addNetwork(conf);
+                    int netId = wifiManager.addNetwork(conf);
+                    wifiManager.disconnect();
+                    wifiManager.enableNetwork(netId, true);
+                    wifiManager.reconnect();
                 }
                 break;
         }
