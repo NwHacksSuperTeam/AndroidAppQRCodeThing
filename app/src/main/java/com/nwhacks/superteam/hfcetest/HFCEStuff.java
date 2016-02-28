@@ -51,37 +51,6 @@ public class HFCEStuff extends AppCompatActivity {
                         .setAction("Action", null).show();
             }
         });
-
-                // Create a BroadcastReceiver for ACTION_FOUND
-        BroadcastReceiver mReceiver = new BroadcastReceiver() {
-            public void onReceive(Context context, Intent intent) {
-                String action = intent.getAction();
-                // When discovery finds a device
-                if (BluetoothDevice.ACTION_FOUND.equals(action)) {
-                    // Get the BluetoothDevice object from the Intent
-                    BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
-                    // Add the name and address to an array adapter to show in a ListView
-                    //mArrayAdapter.add(device.getName() + "\n" + device.getAddress());
-                    try {
-                        String s = device.getName();
-                        Log.d("BLUE TEETH", device.getName() + " " + device.getAddress());
-                        if(device.getAddress().equals("30:14:11:14:02:68")){
-                            ConnectThread connectThread = new ConnectThread(device);
-                            connectThread.start();
-                        }
-                    }catch (Exception e){
-                        e.printStackTrace();
-                    }
-                }
-            }
-        };
-        // Register the BroadcastReceiver
-        IntentFilter filter = new IntentFilter(BluetoothDevice.ACTION_FOUND);
-        registerReceiver(mReceiver, filter); // Don't forget to unregister during onDestroy
-
-        BluetoothAdapter mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
-        mBluetoothAdapter.startDiscovery();
-
     }
 
     @Override
@@ -165,7 +134,7 @@ public class HFCEStuff extends AppCompatActivity {
                     // Parsing bar code reader result
                     IntentResult result = IntentIntegrator.parseActivityResult(requestCode, resultCode, intent);
                     String contents = result.getContents();
-                    sendFile("image.png");
+                    getBluetooth(contents);
                 }
                 break;
         }
@@ -186,20 +155,36 @@ public class HFCEStuff extends AppCompatActivity {
         return super.onOptionsItemSelected(item);
     }
 
-    // From http://stackoverflow.com/questions/15697601/
-    public void sendFile(String fileName) {
+    void getBluetooth(String uuid) {
 
-        Log.d(TAG, "Sending file...");
+        // Create a BroadcastReceiver for ACTION_FOUND
+        BroadcastReceiver mReceiver = new BroadcastReceiver() {
+            public void onReceive(Context context, Intent intent) {
+                String action = intent.getAction();
+                // When discovery finds a device
+                if (BluetoothDevice.ACTION_FOUND.equals(action)) {
+                    // Get the BluetoothDevice object from the Intent
+                    BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
+                    // Add the name and address to an array adapter to show in a ListView
+                    //mArrayAdapter.add(device.getName() + "\n" + device.getAddress());
+                    try {
+                        String s = device.getName();
+                        Log.d("BLUE TEETH", device.getName() + " " + device.getAddress());
+                        if(device.getAddress().equals("30:14:11:14:02:68")){
+                            ConnectThread connectThread = new ConnectThread(device);
+                            connectThread.start();
+                        }
+                    }catch (Exception e){
+                        e.printStackTrace();
+                    }
+                }
+            }
+        };
+        // Register the BroadcastReceiver
+        IntentFilter filter = new IntentFilter(BluetoothDevice.ACTION_FOUND);
+        registerReceiver(mReceiver, filter); // Don't forget to unregister during onDestroy
 
-        File dir = Environment.getExternalStorageDirectory();
-        File manualFile = new File(dir, "/" + fileName);
-        Uri uri = Uri.fromFile(manualFile);
-        String type = "application/pdf";
-
-        Intent sharingIntent = new Intent(android.content.Intent.ACTION_SEND);
-        sharingIntent.setType(type);
-        sharingIntent.setClassName("com.android.bluetooth", "com.android.bluetooth.opp.BluetoothOppLauncherActivity");
-        sharingIntent.putExtra(Intent.EXTRA_STREAM, uri);
-        startActivity(sharingIntent);
+        BluetoothAdapter mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
+        mBluetoothAdapter.startDiscovery();
     }
 }

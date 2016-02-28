@@ -28,10 +28,7 @@ public class ConnectThread extends Thread {
 
         try {
             Method getUuidsMethod = BluetoothAdapter.class.getDeclaredMethod("getUuids", null);
-
-
             ParcelUuid[] uuids = (ParcelUuid[]) getUuidsMethod.invoke(adapter, null);
-
             for (ParcelUuid uuid : uuids) {
                 Log.d("UUID: ", uuid.getUuid().toString());
             }
@@ -65,10 +62,6 @@ public class ConnectThread extends Thread {
             } catch (IOException closeException) { }
             return;
         }
-
-        // Do work to manage the connection (in a separate thread)
-        ConnectedThread connectedThread = new ConnectedThread(mmSocket);
-        connectedThread.start();
     }
 
     /** Will cancel an in-progress connection, and close the socket */
